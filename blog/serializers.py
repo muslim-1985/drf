@@ -25,10 +25,12 @@ class CategorySerializers(serializers.ModelSerializer):
 
 
 class PostSerializers(serializers.ModelSerializer):
-    user = UserSerializers(read_only=True)
-    tags = TagSerializers(many=True, read_only=True)
-    category = CategorySerializers(read_only=True)
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())  # UserSerializers(read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())  # TagSerializers(many=True)
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all())  # CategorySerializers(read_only=True)
 
     class Meta:
         model = Post
         fields = ("title", "slug", "body", "created_at", "user", "tags", "category")
+

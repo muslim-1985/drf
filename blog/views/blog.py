@@ -19,19 +19,15 @@ class Posts(APIView):
 
 
 class CreatePost(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    # IsAuthenticated
+    permission_classes = (permissions.AllowAny,)
     parser_classes = (parsers.JSONParser, parsers.MultiPartParser,)
 
     def post(self, request):
-        post = request.data
-        user = get_object_or_404(User, id=post['user'])
-        cat = get_object_or_404(Category, id=post['cats'])
-        # tag = Tag.objects.filter(pk__in=post.get('tags'))
-        s = Post.objects.create(title=post['title'], body=post['body'], user=user, category=cat)
-        s.tags.set(post.get('tags'))
-        s.save()
-        posts = Post.objects.all()
-        serializer = PostSerializers(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-        #return Response('hello', status=status.HTTP_201_CREATED)
+        data = request.data
 
+        serializer = PostSerializers(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=400)
