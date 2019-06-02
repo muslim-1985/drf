@@ -1,13 +1,8 @@
 from __future__ import unicode_literals
 from django.db import models
-import sys
-import os
 from django.shortcuts import reverse
 from django.utils.text import slugify
 from time import time
-from PIL import Image
-from io import BytesIO
-from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from django.contrib.auth.models import (
     AbstractBaseUser, PermissionsMixin, BaseUserManager
@@ -72,7 +67,7 @@ def gen_slug(s):
 
 class Category(models.Model):
     title = models.CharField(max_length=255, db_index=True)
-    image = models.ImageField(max_length=255, db_index=True)
+    image = models.CharField(max_length=255, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -81,7 +76,6 @@ class Post(models.Model):
     title = models.CharField(max_length=150, db_index=True)
     slug = models.SlugField(max_length=150, blank=True, unique=True)
     body = models.TextField(blank=True, db_index=True)
-    is_active = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     tags = models.ManyToManyField('Tag', blank=True, related_name='posts')
@@ -112,25 +106,9 @@ class Tag(models.Model):
 
 class PostFile(models.Model):
     name = models.CharField(max_length=255, db_index=True)
-    path = models.ImageField(blank=True, default='')
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='files')
+    path = models.TextField(blank=True, db_index=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            self.path = self.compressImage(self.path)
-        super(PostFile, self).save(*args, **kwargs)
-
-    def compressImage(self, path):
-        imageTemproary = Image.open(path.name)
-        #outputIoStream = BytesIO()
-        imageTemproary.thumbnail((640, 480))
-        imageTemproary.save(path.name, format=imageTemproary.format)
-        #outputIoStream.seek(0)
-        # os.remove(path.name)
-        # path = InMemoryUploadedFile(outputIoStream, 'ImageField', path.name,
-        #                             'image/' + imageTemproary.format.lower(), sys.getsizeof(outputIoStream), None)
-        return path
 
 
 class BotUser(models.Model):
@@ -138,7 +116,7 @@ class BotUser(models.Model):
     username = models.CharField(max_length=255, db_index=True)
     first_name = models.CharField(max_length=255, db_index=True)
     last_name = models.CharField(max_length=255, db_index=True)
-    avatar = models.ImageField(max_length=255, db_index=True)
+    avatar = models.CharField(max_length=255, db_index=True)
     watch = models.BooleanField(default=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -147,22 +125,19 @@ class BotUser(models.Model):
 class Comment(models.Model):
     title = models.CharField(max_length=255, db_index=True)
     body = models.TextField(blank=True, db_index=True)
-    file = models.ImageField(max_length=255, db_index=True)
+    file = models.CharField(max_length=255, db_index=True)
     active = models.BooleanField(default=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class BotUserMessage(models.Model):
     subject = models.TextField(blank=True, db_index=True)
     chat_id = models.IntegerField()
-    bot_user = models.ForeignKey(BotUser, on_delete=models.CASCADE, related_name='messages')
+    file = models.CharField(max_length=255, db_index=True)
+    bot_user = models.ForeignKey(BotUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-class BotMessageFiles(models.Model):
-    name = models.CharField(max_length=255, db_index=True)
-    path = models.FilePathField(blank=True, default='')
-    message = models.ForeignKey(BotUserMessage, on_delete=models.CASCADE, related_name='files')
-    created_at = models.DateTimeField(auto_now_add=True)
+
