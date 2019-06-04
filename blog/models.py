@@ -6,6 +6,7 @@ from django.shortcuts import reverse
 from django.utils.text import slugify
 from time import time
 from PIL import Image
+from rest_framework.exceptions import ParseError
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
@@ -113,23 +114,22 @@ class Tag(models.Model):
 class PostFile(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     path = models.ImageField(blank=True, default='')
+    full_path = models.ImageField(blank=True, default='')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='files')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
-            self.path = self.compressImage(self.path)
+            self.full_path = self.compress_image(self.full_path)
         super(PostFile, self).save(*args, **kwargs)
 
-    def compressImage(self, path):
-        imageTemproary = Image.open(path.name)
-        #outputIoStream = BytesIO()
-        imageTemproary.thumbnail((640, 480))
-        imageTemproary.save(path.name, format=imageTemproary.format)
-        #outputIoStream.seek(0)
-        # os.remove(path.name)
-        # path = InMemoryUploadedFile(outputIoStream, 'ImageField', path.name,
-        #                             'image/' + imageTemproary.format.lower(), sys.getsizeof(outputIoStream), None)
+    def compress_image(self, path):
+        try:
+            imageTemproary = Image.open(path.name)
+            imageTemproary.thumbnail((640, 480))
+            imageTemproary.save(path.name, format=imageTemproary.format)
+        except:
+            raise ParseError("Some files uploaded error")
         return path
 
 
