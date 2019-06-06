@@ -9,6 +9,9 @@ from PIL import Image
 from rest_framework.exceptions import ParseError
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.conf import settings
+from django.core.files.storage import default_storage
+import magic
 
 from django.contrib.auth.models import (
     AbstractBaseUser, PermissionsMixin, BaseUserManager
@@ -112,7 +115,7 @@ class Tag(models.Model):
 
 
 class PostFile(models.Model):
-    name = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255, blank=True, db_index=True)
     path = models.ImageField(blank=True, default='')
     full_path = models.ImageField(blank=True, default='')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='files')
@@ -124,12 +127,13 @@ class PostFile(models.Model):
         super(PostFile, self).save(*args, **kwargs)
 
     def compress_image(self, path):
-        try:
-            imageTemproary = Image.open(path.name)
-            imageTemproary.thumbnail((640, 480))
-            imageTemproary.save(path.name, format=imageTemproary.format)
-        except:
-            raise ParseError("Some files uploaded error")
+        # try:
+        print(path.name)
+        imageTemproary = Image.open(path.name)
+        # imageTemproary.thumbnail((640, 480))
+        imageTemproary.save(path.name, format=imageTemproary.format, optimize=True)
+        # except:
+        #     raise ParseError("Some files uploaded error")
         return path
 
 
@@ -166,3 +170,34 @@ class BotMessageFiles(models.Model):
     path = models.FilePathField(blank=True, default='')
     message = models.ForeignKey(BotUserMessage, on_delete=models.CASCADE, related_name='files')
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PostFileAdmin(PostFile):
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        related_model = Post.objects.latest('id')
+        filename = default_storage.generate_filename(settings.MEDIA_ROOT + '/user_' + str(
+            related_model.user.id) + '/' + 'post' + '_' + str(related_model.id) + '/' + self.path.name)
+        full_path = default_storage.save(filename, self.path)
+        name = full_path.split('/')[-1]
+        path = '/user_' + str(
+            related_model.user.id) + '/' + 'post' + '_' + str(
+            related_model.id) + '/' + name
+        if not self.id:
+            self.name = name
+            self.path = path
+            self.full_path = full_path
+            self.compres_image(full_path)
+        super(PostFileAdmin, self).save(*args, **kwargs)
+
+    def compres_image(self, path):
+        # try:
+        print(path)
+        imageTemproary = Image.open(path)
+        # imageTemproary.thumbnail((640, 480))
+        imageTemproary.save(path, format=imageTemproary.format, optimize=True)
+        # except:
+        #     raise ParseError("Some files uploaded error")
+        return path

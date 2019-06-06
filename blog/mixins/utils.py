@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from django.conf import settings
 from django.core.files.storage import default_storage
+import magic
 from PIL import Image
 from django.core.exceptions import ValidationError
 from rest_framework import status
@@ -13,11 +14,16 @@ class FilesUpload:
     files_model = None
     instance_files_path = None
 
+    def __file_path_mime(self, file):
+        mime = magic.from_buffer(file.read(1024), mime=True)
+        return mime
+
     def files_upload(self, request, related_model):
         files = request.FILES.getlist('files')
         for file in files:
             filename = default_storage.generate_filename(settings.MEDIA_ROOT + '/user_' + str(
                 related_model.user.id) + '/' + self.instance_files_path + '_' + str(related_model.id) + '/' + file.name)
+            print(self.__file_path_mime(file))
             try:
                 img = Image.open(file)
                 img.verify()
