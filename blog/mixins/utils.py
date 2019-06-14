@@ -21,31 +21,22 @@ class FilesUpload:
     def files_upload(self, request, related_model):
         files = request.FILES.getlist('files')
         for file in files:
-            filename = default_storage.generate_filename(settings.MEDIA_ROOT + '/user_' + str(
-                related_model.user.id) + '/' + self.instance_files_path + '_' + str(related_model.id) + '/' + file.name)
-            print(self.__file_path_mime(file))
             try:
-                img = Image.open(file)
-                img.verify()
-                full_path = default_storage.save(filename, file)
-                filename = full_path.split('/')[-1]
-                path = '/user_' + str(
-                    related_model.user.id) + '/' + self.instance_files_path + '_' + str(
-                    related_model.id) + '/' + filename
-            except:
-                raise ParseError('Unsupported file type {file_type}'.format(file_type=file.name))
-            try:
-                self.files_model.objects.create(name=file.name, path=path, full_path=full_path, post=related_model)
+                self.files_model.objects.create(path=file, post=related_model)
             except ValueError:
                 return Response({'error': 'Value Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class ModelCreateFilesUpload(FilesUpload):
+class ModelCreate(FilesUpload):
     model = None
     files_model = None
     serializer = None
     return_serializer = None
-    instance_files_path = None
+
+    def get(self, request):
+        posts = self.model.objects.all()
+        serializer = self.serializer(posts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         data = request.data

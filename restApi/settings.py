@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     # 'djoser',
     'blog',
+    'users',
+    'telegramm_bot',
+    'comments',
 ]
 
 MIDDLEWARE = [
@@ -130,7 +133,7 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/uploads/')
 
-AUTH_USER_MODEL = 'blog.User'
+AUTH_USER_MODEL = 'users.User'
 
 JWT_AUTH = {
 

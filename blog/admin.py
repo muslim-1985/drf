@@ -3,7 +3,7 @@ from .models import *
 
 
 class PostFileAdmin(admin.TabularInline):
-    model = PostFileAdmin
+    model = PostFile
     exclude = ('full_path', 'name',)
 
 
@@ -23,13 +23,6 @@ class TagAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Tag, TagAdmin)
-
-
-class UserAdmin(admin.ModelAdmin):
-    pass
-
-
-admin.site.register(User, UserAdmin)
 
 
 class CategoryAdmin(admin.ModelAdmin):

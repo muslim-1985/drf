@@ -11,62 +11,8 @@ from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from django.core.files.storage import default_storage
+from users.models import User
 import magic
-
-from django.contrib.auth.models import (
-    AbstractBaseUser, PermissionsMixin, BaseUserManager
-)
-
-
-class UserManager(BaseUserManager):
-
-    def _create_user(self, email, password, **extra_fields):
-        """
-        Creates and saves a User with the given email,and password.
-        """
-        if not email:
-            raise ValueError('The given email must be set')
-        try:
-            user = self.model(email=email, **extra_fields)
-            user.set_password(password)
-            user.save(using=self._db)
-            return user
-        except:
-            raise
-
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', False)
-        extra_fields.setdefault('is_superuser', False)
-        return self._create_user(email, password, **extra_fields)
-
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-
-        return self._create_user(email, password=password, **extra_fields)
-
-
-class User(AbstractBaseUser, PermissionsMixin):
-    """
-    An abstract base class implementing a fully featured User model with
-    admin-compliant permissions.
-
-    """
-    email = models.EmailField(max_length=40, unique=True)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    objects = UserManager()
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
-
-    def save(self, *args, **kwargs):
-        super(User, self).save(*args, **kwargs)
-        return self
 
 
 def gen_slug(s):
@@ -122,65 +68,12 @@ class PostFile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if not self.id:
-            self.full_path = self.compress_image(self.full_path)
-        super(PostFile, self).save(*args, **kwargs)
-
-    def compress_image(self, path):
-        # try:
-        print(path.name)
-        imageTemproary = Image.open(path.name)
-        # imageTemproary.thumbnail((640, 480))
-        imageTemproary.save(path.name, format=imageTemproary.format, optimize=True)
-        # except:
-        #     raise ParseError("Some files uploaded error")
-        return path
-
-
-class BotUser(models.Model):
-    chat_id = models.IntegerField()
-    username = models.CharField(max_length=255, db_index=True)
-    first_name = models.CharField(max_length=255, db_index=True)
-    last_name = models.CharField(max_length=255, db_index=True)
-    avatar = models.ImageField(max_length=255, db_index=True)
-    watch = models.BooleanField(default=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class Comment(models.Model):
-    title = models.CharField(max_length=255, db_index=True)
-    body = models.TextField(blank=True, db_index=True)
-    file = models.ImageField(max_length=255, db_index=True)
-    active = models.BooleanField(default=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class BotUserMessage(models.Model):
-    subject = models.TextField(blank=True, db_index=True)
-    chat_id = models.IntegerField()
-    bot_user = models.ForeignKey(BotUser, on_delete=models.CASCADE, related_name='messages')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class BotMessageFiles(models.Model):
-    name = models.CharField(max_length=255, db_index=True)
-    path = models.FilePathField(blank=True, default='')
-    message = models.ForeignKey(BotUserMessage, on_delete=models.CASCADE, related_name='files')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class PostFileAdmin(PostFile):
-    class Meta:
-        proxy = True
-
-    def save(self, *args, **kwargs):
         related_model = Post.objects.latest('id')
+
         filename = default_storage.generate_filename(settings.MEDIA_ROOT + '/user_' + str(
             related_model.user.id) + '/' + 'post' + '_' + str(related_model.id) + '/' + self.path.name)
         full_path = default_storage.save(filename, self.path)
+
         name = full_path.split('/')[-1]
         path = '/user_' + str(
             related_model.user.id) + '/' + 'post' + '_' + str(
@@ -189,15 +82,44 @@ class PostFileAdmin(PostFile):
             self.name = name
             self.path = path
             self.full_path = full_path
-            self.compres_image(full_path)
-        super(PostFileAdmin, self).save(*args, **kwargs)
+            self.compress_image(full_path)
+        super(PostFile, self).save(*args, **kwargs)
 
-    def compres_image(self, path):
+    def compress_image(self, path):
         # try:
-        print(path)
         imageTemproary = Image.open(path)
         # imageTemproary.thumbnail((640, 480))
         imageTemproary.save(path, format=imageTemproary.format, optimize=True)
         # except:
         #     raise ParseError("Some files uploaded error")
         return path
+
+# class PostFileAdmin(PostFile):
+#     class Meta:
+#         proxy = True
+#
+#     def save(self, *args, **kwargs):
+#         related_model = Post.objects.latest('id')
+#         filename = default_storage.generate_filename(settings.MEDIA_ROOT + '/user_' + str(
+#             related_model.user.id) + '/' + 'post' + '_' + str(related_model.id) + '/' + self.path.name)
+#         full_path = default_storage.save(filename, self.path)
+#         name = full_path.split('/')[-1]
+#         path = '/user_' + str(
+#             related_model.user.id) + '/' + 'post' + '_' + str(
+#             related_model.id) + '/' + name
+#         if not self.id:
+#             self.name = name
+#             self.path = path
+#             self.full_path = full_path
+#             self.compres_image(full_path)
+#         super(PostFileAdmin, self).save(*args, **kwargs)
+#
+#     def compres_image(self, path):
+#         # try:
+#         print(path)
+#         imageTemproary = Image.open(path)
+#         # imageTemproary.thumbnail((640, 480))
+#         imageTemproary.save(path, format=imageTemproary.format, optimize=True)
+#         # except:
+#         #     raise ParseError("Some files uploaded error")
+#         return path

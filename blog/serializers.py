@@ -1,15 +1,6 @@
 from rest_framework import serializers
+from users.serializers import UserSerializers
 from .models import *
-
-
-class UserSerializers(serializers.ModelSerializer):
-    created_at = serializers.ReadOnlyField()
-
-    class Meta(object):
-        model = User
-        fields = ('id', 'email', 'first_name', 'last_name',
-                  'created_at', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
 
 
 class TagSerializers(serializers.ModelSerializer):
@@ -51,4 +42,3 @@ class PostReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ("title", "slug", "body", "is_active", "created_at", "user", "tags", "category", "files")
-

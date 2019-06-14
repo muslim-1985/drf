@@ -5,7 +5,7 @@ from rest_framework import permissions
 from rest_framework import parsers
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
-from blog.mixins.utils import ModelCreateFilesUpload
+from blog.mixins.utils import ModelCreate
 import sys
 from PIL import Image
 from io import BytesIO
@@ -19,16 +19,7 @@ from blog.models import *
 from blog.serializers import *
 
 
-class Posts(APIView):
-    permission_classes = (permissions.AllowAny,)
-
-    def get(self, request):
-        posts = Post.objects.all()
-        serializer = PostSerializers(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class CreatePost(APIView, ModelCreateFilesUpload):
+class Posts(APIView, ModelCreate):
     # IsAuthenticated
     permission_classes = (permissions.AllowAny,)
     parser_classes = (parsers.JSONParser, parsers.MultiPartParser, parsers.FileUploadParser,)
@@ -37,5 +28,4 @@ class CreatePost(APIView, ModelCreateFilesUpload):
     files_model = PostFile
     serializer = PostSerializers
     return_serializer = PostReturnSerializer
-    instance_files_path = 'post'
 
