@@ -48,6 +48,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=30, blank=True)
     aboutme = models.CharField(max_length=255, blank=True)
     avatar = models.ImageField(blank=True, null=True)
+    ip_address = models.GenericIPAddressField(blank=True,  null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -59,4 +60,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         super(User, self).save(*args, **kwargs)
+        return self
+
+
+class BannedUser(models.Model):
+    username = models.CharField(max_length=30)
+    ip_address = models.GenericIPAddressField()
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
         return self

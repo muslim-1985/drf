@@ -86,13 +86,14 @@ class PostFile(models.Model):
         super(PostFile, self).save(*args, **kwargs)
 
     def compress_image(self, path):
-        # try:
-        imageTemproary = Image.open(path)
-        # imageTemproary.thumbnail((640, 480))
-        imageTemproary.save(path, format=imageTemproary.format, optimize=True)
-        # except:
-        #     raise ParseError("Some files uploaded error")
+        try:
+            imageTemproary = Image.open(path)
+            # imageTemproary.thumbnail((640, 480))
+            imageTemproary.save(path, format=imageTemproary.format, optimize=True)
+        except:
+            raise ParseError("Some files uploaded error")
         return path
+
 
 # class PostFileAdmin(PostFile):
 #     class Meta:

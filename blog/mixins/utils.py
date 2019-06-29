@@ -40,6 +40,7 @@ class ModelCreate(FilesUpload):
 
     def post(self, request):
         data = request.data
+        print(request.META.get('REMOTE_ADDR'))
         serializer = self.serializer(data=data)
         if serializer.is_valid():
             serializer.save()
