@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+import os
 from django.conf import settings
 from django.core.files.storage import default_storage
 import magic
@@ -41,7 +42,7 @@ class ModelCreate(FilesUpload):
 
     def post(self, request):
         data = request.data
-        #print(request.META.get('REMOTE_ADDR'))
+        # print(request.META.get('REMOTE_ADDR'))
         serializer = self.serializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -81,3 +82,11 @@ class ModelUpdate(FilesUpload):
             return Response({'data': serializer_post.data}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=400)
+
+    def delete(self, request, *args, **kwargs):
+        post = get_object_or_404(self.model, id=kwargs.get('pk'))
+        for file in post.files.all():
+            if os.path.isfile(file.full_path.name):
+                os.remove(file.full_path.name)
+        post.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
