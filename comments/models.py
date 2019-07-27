@@ -11,7 +11,7 @@ class Comment(models.Model):
     body = models.TextField(blank=True, db_index=True)
     file = models.ImageField(max_length=255, db_index=True, blank=True)
     active = models.BooleanField(default=False)
-    parent_id = models.ForeignKey('Comment', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    parent_id = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='parent')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
     created_at = models.DateTimeField(auto_now_add=True)

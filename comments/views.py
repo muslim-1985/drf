@@ -21,3 +21,15 @@ class Comments(APIView, ModelCreate):
         comments = Comment.objects.all()
         serializer = CommentReturnSerializer(comments, many=True)
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data = request.data
+        # print(data.get('children'))
+        # return Response({'data': 'hello'}, status=status.HTTP_201_CREATED)
+        serializer = CommentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            related_model = Comment.objects.latest('id')
+            serializer_post = CommentReturnSerializer(instance=related_model)
+            return Response({'data': serializer_post.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=400)
