@@ -36,9 +36,9 @@ class ModelCreate(FilesUpload):
     return_serializer = None
 
     def get(self, request):
-        posts = self.model.objects.all()
-        serializer = self.serializer(posts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        posts = self.model.objects.filter(user_id=request.user.id)
+        serializer = self.return_serializer(posts, many=True)
+        return Response({'data': serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
         data = request.data

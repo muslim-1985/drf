@@ -19,6 +19,7 @@ from users.serializers import *
 class CreateUserAPIView(APIView):
     # Allow any user (authenticated or not) to access this url
     permission_classes = (permissions.AllowAny,)
+
     # parser_classes = (parsers.JSONParser,)
 
     def post(self, request):
@@ -38,8 +39,9 @@ class UserAuthenticate(APIView):
             password = request.data['password']
             jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 
-            user = User.objects.get(email=email, password=password)
-            if user:
+            user = User.objects.get(email=email)
+
+            if user and user.check_password(password):
                 try:
                     payload = jwt_payload_handler(user)
                     token = jwt.encode(payload, settings.SECRET_KEY)

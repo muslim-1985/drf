@@ -35,9 +35,9 @@ class PostSerializers(serializers.ModelSerializer):
 
 class PostReturnSerializer(serializers.ModelSerializer):
     user = UserSerializers(read_only=True)
-    tags = TagSerializers(many=True)
+    tags = TagSerializers(many=True, read_only=True)
     category = CategorySerializers(read_only=True)
-    files = PostFileSerializers(many=True)
+    files = PostFileSerializers(many=True, read_only=True)
 
     class Meta:
         model = Post
